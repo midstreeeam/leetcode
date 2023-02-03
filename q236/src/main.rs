@@ -37,7 +37,36 @@ fn lowest_common_ancestor(
     p: Option<Rc<RefCell<TreeNode>>>,
     q: Option<Rc<RefCell<TreeNode>>>,
 ) -> Option<Rc<RefCell<TreeNode>>> {
-    root
+    let root = match root {
+        Some(a) => a,
+        None => return None,
+    };
+    let v1 = p.unwrap().borrow().val;
+    let v2 = q.unwrap().borrow().val;
+    helper(root, v1, v2)
+}
+
+fn helper(root: Rc<RefCell<TreeNode>>, v1: i32, v2: i32) -> Option<Rc<RefCell<TreeNode>>> {
+    let root_v = root.borrow().val;
+    if root_v == v1 || root_v == v2 {
+        return Some(root);
+    }
+    let l = root
+        .borrow()
+        .left
+        .as_ref()
+        .and_then(|a| helper(a.clone(), v1, v2));
+    let r = root
+        .borrow()
+        .right
+        .as_ref()
+        .and_then(|a| helper(a.clone(), v1, v2));
+    match (l, r) {
+        (Some(_), Some(_)) => Some(root),
+        (None, None) => None,
+        (Some(l), None) => Some(l),
+        (None, Some(r)) => Some(r),
+    }
 }
 
 fn get_val(s: &str) -> Option<i32> {
@@ -112,14 +141,44 @@ fn gen_tree(nums: Vec<&str>) -> Node {
     // }
 }
 
+fn find_node_rc(root: &Node, val: i32) -> Node {
+    match root {
+        None => None,
+        Some(rt) => {
+            if rt.borrow().val == val {
+                let rt_rc = Rc::clone(rt);
+                return Some(rt_rc);
+            } else {
+                let left_child_rc = find_node_rc(&rt.borrow().left, val);
+                let right_child_rc = find_node_rc(&rt.borrow().right, val);
+                match left_child_rc {
+                    None => match right_child_rc {
+                        None => None,
+                        Some(rc) => Some(rc),
+                    },
+                    Some(lc) => Some(lc),
+                }
+            }
+        }
+    }
+}
+
 fn main() {
     let mut buf = String::new();
+    let mut node1_val = String::new();
+    let mut node2_val = String::new();
     stdin().read_line(&mut buf).expect("can't readline");
+    stdin().read_line(&mut node1_val).unwrap();
+    stdin().read_line(&mut node2_val).unwrap();
+
+    let node1_val = node1_val.trim().parse::<i32>().unwrap();
+    let node2_val = node2_val.trim().parse::<i32>().unwrap();
+
     let nums: Vec<&str> = buf.trim().split(",").collect();
-
-    println!("{nums:?}");
-
     let tree: Node = gen_tree(nums);
 
-    println!("{tree:#?}");
+    let node1 = find_node_rc(&tree, node1_val);
+    let node2 = find_node_rc(&tree, node2_val);
+
+    lowest_common_ancestor(tree, node1, node2);
 }
