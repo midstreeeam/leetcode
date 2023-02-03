@@ -1,3 +1,3 @@
 # leetcode_test
 
-learn new language by writing leetcode
+learn new language by writing leetcode.
